@@ -1,5 +1,4 @@
 package com.firebase.notifications;
-
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -7,16 +6,17 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.HashMap;
 
+import org.apache.log4j.Logger;
 import org.json.JSONObject;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
-public class FCMNotification {
+
+public class FCMNotifications {
 
 	private static final String NOTIFICATION_SERVER_URL="https://fcm.googleapis.com/fcm/send";
 	private static final String API_KEY  = "AIzaSyBASg2VWvqn4N4WS-ow6VCrBhuPo_2XvC8";
-	
+	private static final Logger logger = Logger.getLogger(FCMNotifications.class);
 	
 	private void sendNotifications() {
 
@@ -66,23 +66,65 @@ public class FCMNotification {
 
 	}
 	
+	public String sendNotifications(String deviceId,String message) {
+		logger.debug("Inside Method Send Notification.");
+		logger.debug("Going to Send Notification to Device " + deviceId);
+		logger.debug("Message : " + message);
+		logger.debug("Initializing Request with API Key " + API_KEY);
+		try {
+			String device = deviceId;
+			URL url = new URL(NOTIFICATION_SERVER_URL);
+			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+			conn.setDoOutput(true);
+			conn.setRequestMethod("POST");
+			conn.setRequestProperty("Content-Type", "application/json");
+
+			conn.setRequestProperty("Authorization", "key=" + API_KEY);
+
+			conn.setDoOutput(true);
+			JSONObject obj = new JSONObject();
+			obj.put("to", device);
+			obj.put("data", new JSONObject().put("message", message));
+			
+			String input = obj.toString();
+			
+			OutputStream os = conn.getOutputStream();
+			os.write(input.getBytes());
+			os.flush();
+			os.close();
+
+			int responseCode = conn.getResponseCode();
+			logger.debug("\nSending 'POST' request to URL : " + url);
+			logger.debug("Post parameters : " + input);
+			logger.debug("Response Code : " + responseCode);
+
+			BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+			String inputLine;
+			StringBuffer response = new StringBuffer();
+
+			while ((inputLine = in.readLine()) != null) {
+				response.append(inputLine);
+			}
+			in.close();
+
+			// print result
+			logger.debug(response.toString());
+			
+			return response.toString();
+			
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return "";
+	}
+	
 	public static void main(String[] args) throws JsonProcessingException{
 		
-		FCMNotification noti = new FCMNotification();
+		FCMNotifications noti = new FCMNotifications();
 		noti.sendNotifications();
 	}
 
-	private String convertMessageToJSON(String destination, String message) throws JsonProcessingException {
-		ObjectMapper mapper = new ObjectMapper();
-		HashMap<String, Object> map = new HashMap<String, Object>();
-		HashMap<String,String> map1 = new HashMap<String, String>();
-		
-		map.put("to", destination);
-		//map.put("data", );
-		String jsonResponse = mapper.writeValueAsString(map);
-		JSONObject jsonObject = new JSONObject(map);
-		
-		return jsonResponse;
-	}
+	
 	
 }
