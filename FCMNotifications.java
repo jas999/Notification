@@ -1,5 +1,6 @@
 package com.firebase.notifications;
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -14,8 +15,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 
 public class FCMNotifications {
 
-	private static final String NOTIFICATION_SERVER_URL="https://fcm.googleapis.com/fcm/send";
-	private static final String API_KEY  = "AIzaSyBASg2VWvqn4N4WS-ow6VCrBhuPo_2XvC8";
+	private String NOTIFICATION_SERVER_URL="https://fcm.googleapis.com/fcm/send";
+	private String API_KEY  = "AIzaSyBASg2VWvqn4N4WS-ow6VCrBhuPo_2XvC8";
 	private static final Logger logger = Logger.getLogger(FCMNotifications.class);
 	
 	private void sendNotifications() {
@@ -66,10 +67,19 @@ public class FCMNotifications {
 
 	}
 	
-	public String sendNotifications(String deviceId,String message) {
+	/**
+	 * This method will send the notifications to the device.
+	 * @param deviceId
+	 * @param message
+	 * @return
+	 * @throws IOException
+	 */
+	public String sendNotifications(String deviceId,String message) throws IOException {
 		logger.debug("Inside Method Send Notification.");
 		logger.debug("Going to Send Notification to Device " + deviceId);
 		logger.debug("Message : " + message);
+		API_KEY = PropertyFileLoader.getPropertiesInstance().getProperty("fcm.apikey");
+		NOTIFICATION_SERVER_URL = PropertyFileLoader.getPropertiesInstance().getProperty("fcm.notificationurl");
 		logger.debug("Initializing Request with API Key " + API_KEY);
 		try {
 			String device = deviceId;
@@ -106,12 +116,9 @@ public class FCMNotifications {
 				response.append(inputLine);
 			}
 			in.close();
-
 			// print result
-			logger.debug(response.toString());
-			
-			return response.toString();
-			
+			logger.debug(response.toString());			
+			return response.toString();			
 
 		} catch (Exception e) {
 			e.printStackTrace();
